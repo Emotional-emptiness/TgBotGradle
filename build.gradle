@@ -22,6 +22,11 @@ dependencies {
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+
+
+	//implementation 'com.openai:openai-gpt:0.1.0'  // Пример зависимости, необходимо указать актуальную версию
+
+
 }
 
 tasks.named('test') {

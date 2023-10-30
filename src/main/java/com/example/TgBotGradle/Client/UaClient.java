@@ -10,11 +10,11 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
-public class CbrClient {
+public class UaClient {
     @Autowired
     private OkHttpClient client;
 
-    @Value("${currency.rates.xml.url}")
+    @Value("${ua.currency.rates.xml.url}")
     private String url;
 
     public String getCurrencyRatesXML() throws ServiceException {

@@ -1,6 +1,6 @@
 package com.example.TgBotGradle.Service.Impl;
 
-import com.example.TgBotGradle.Client.CbrClient;
+import com.example.TgBotGradle.Client.UaClient;
 import com.example.TgBotGradle.Exception.ServiceException;
 import com.example.TgBotGradle.Service.ExchangeRatesService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,7 @@ public class ExchangeRatesServiceImpl implements ExchangeRatesService {
     public static final String USD_XPATH = "/exchange/currency[cc='USD']/rate";
     public static final String EUR_XPATH = "/exchange/currency[cc='EUR']/rate";
     @Autowired
-    private CbrClient client;
+    private UaClient client;
     @Override
     public String getUSDExchangeRate() throws SecurityException, ServiceException, ServerCloneException {
         var xml = client.getCurrencyRatesXML();

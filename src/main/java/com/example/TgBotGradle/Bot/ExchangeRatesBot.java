@@ -2,7 +2,6 @@ package com.example.TgBotGradle.Bot;
 
 import com.example.TgBotGradle.Exception.ServiceException;
 import com.example.TgBotGradle.Service.ExchangeRatesService;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,11 +10,16 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
 import java.rmi.server.ServerCloneException;
 import java.time.LocalDate;
-@Slf4j
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
 public class ExchangeRatesBot extends TelegramLongPollingBot {
     private static final Logger LOG = LoggerFactory.getLogger(ExchangeRatesBot.class);
@@ -26,7 +30,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
     private static final String HELP = "/help";
     @Autowired
     private ExchangeRatesService exchangeRatesService;
-    public ExchangeRatesBot(@Value("${bot.token}") String botToken){
+    public ExchangeRatesBot(@Value("${bot.token}") String botToken) {
         super(botToken);
     }
     @Override
@@ -34,38 +38,47 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         if (!update.hasMessage() || !update.getMessage().hasText()) {
             return;
         }
+
         var message = update.getMessage().getText();
         var chatId = update.getMessage().getChatId();
-        var user= update.getMessage().getChat().getUserName();
+        var user = update.getMessage().getChat().getUserName();
 
         switch (message) {
             case START -> {
                 String userName = user;
-                startCommand(chatId,userName);
-                log.info("press /start: " + userName);
-            }
-            case USD -> {
+                startCommand(chatId, userName);
+                var currencySelectionMessage = createCurrencySelectionMessage(chatId);
+                try {
+                    execute(currencySelectionMessage);
+                } catch (TelegramApiException e) {
+                    LOG.error("Ошибка отправки сообщения", e);
+                }
+                LOG.info("press /start: " + userName);
+                }
+                case USD -> {
                 String userName = user;
                 usdCommand(chatId);
                 LOG.info("press /usd: " + userName);
-            }
-            case EUR -> {
+                }
+                case EUR -> {
                 String userName = user;
                 eurCommand(chatId);
                 LOG.info("press /eur: " + userName);
-            }
-            case HELP -> {
+                }
+                case HELP -> {
                 String userName = user;
                 helpCommand(chatId);
                 LOG.info("press /help: " + userName);
-            }
-            default -> {
+                }
+                default -> {
                 String userName = user;
                 unknownCommand(chatId);
                 LOG.info("press unknown command: " + userName);
+                }
             }
-        }
+
     }
+
 
     @Override
     public String getBotUsername() {
@@ -80,22 +93,26 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
             LOG.error("ошибка отправки сообщения ", e);
         }
     }
+
     private void startCommand(Long chatId, String userName) {
         var text = """
                 Добро пожаловать в бот, %s!
-                
+                                
                 Здесь Вы сможете узнать официальные курсы валют на сегодня.
-                
-                Для этого воспользуйтесь командами:
+                             
+                Для этого воспользуйтесь копками синзу
+                либо напишите команду:
                 /usd - курс доллара
                 /eur - курс евро
-                
-                Дополнительные команды:
+                                
+                Дополнительные команда
+                либо кнопка снизу:
                 /help - получение справки
                 """;
         var formattedText = String.format(text, userName);
         sendMessage(chatId, formattedText);
     }
+
     private void usdCommand(Long chatId) {
         String formattedText;
         try {
@@ -110,6 +127,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         }
         sendMessage(chatId, formattedText);
     }
+
     private void eurCommand(Long chatId) {
         String formattedText;
         try {
@@ -124,18 +142,46 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         }
         sendMessage(chatId, formattedText);
     }
+
     private void helpCommand(Long chatId) {
         var text = """
                 Справочная информация по боту
-                
+                                
                 Для получения текущих курсов валют воспользуйтесь командами:
                 /usd - курс доллара
                 /eur - курс евро
                 """;
         sendMessage(chatId, text);
     }
+
     private void unknownCommand(Long chatId) {
         var text = "Не удалось распознать команду";
         sendMessage(chatId, text);
     }
+    private SendMessage createCurrencySelectionMessage(Long chatId) {
+        var text = "Выберите команду:";
+        var sendMessage = new SendMessage(chatId.toString(), text); // Преобразуйте chatId в строку
+
+        List<List<InlineKeyboardButton> > keyboard = new ArrayList<>();
+        List<InlineKeyboardButton> row = new ArrayList<>();
+
+        InlineKeyboardButton usdButton = new InlineKeyboardButton("USD");
+        usdButton.setCallbackData("/usd");
+        row.add(usdButton);
+
+        InlineKeyboardButton eurButton = new InlineKeyboardButton("EUR");
+        eurButton.setCallbackData("/eur");
+        row.add(eurButton);
+
+        InlineKeyboardButton helpButton = new InlineKeyboardButton("HELP");
+        helpButton.setCallbackData("/help");
+        row.add(helpButton);
+
+        keyboard.add(row);
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboard);
+        sendMessage.setReplyMarkup(markup);
+
+        return sendMessage;
+    }
+
 }

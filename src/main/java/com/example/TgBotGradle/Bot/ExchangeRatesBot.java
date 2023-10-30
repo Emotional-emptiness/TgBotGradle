@@ -35,23 +35,33 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         }
         var message = update.getMessage().getText();
         var chatId = update.getMessage().getChatId();
+        var user= update.getMessage().getChat().getUserName();
 
         switch (message) {
             case START -> {
-                String userName = update.getMessage().getChat().getUserName();
+                String userName = user;
                 startCommand(chatId,userName);
+                LOG.info("press /start: " + userName);
             }
             case USD -> {
+                String userName = user;
                 usdCommand(chatId);
+                LOG.info("press /usd: " + userName);
             }
             case EUR -> {
+                String userName = user;
                 eurCommand(chatId);
+                LOG.info("press /eur: " + userName);
             }
             case HELP -> {
+                String userName = user;
                 helpCommand(chatId);
+                LOG.info("press /help: " + userName);
             }
             default -> {
+                String userName = user;
                 unknownCommand(chatId);
+                LOG.info("press unknown command: " + userName);
             }
         }
     }

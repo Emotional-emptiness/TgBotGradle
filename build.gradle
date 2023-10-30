@@ -19,6 +19,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
 	implementation group: 'org.telegram', name: 'telegrambots', version: '6.8.0'
 	implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.12.0'
+	compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
+
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 

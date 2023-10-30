@@ -2,6 +2,7 @@ package com.example.TgBotGradle.Bot;
 
 import com.example.TgBotGradle.Exception.ServiceException;
 import com.example.TgBotGradle.Service.ExchangeRatesService;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.rmi.server.ServerCloneException;
 import java.time.LocalDate;
-
+@Slf4j
 @Component
 public class ExchangeRatesBot extends TelegramLongPollingBot {
     private static final Logger LOG = LoggerFactory.getLogger(ExchangeRatesBot.class);
@@ -41,7 +42,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
             case START -> {
                 String userName = user;
                 startCommand(chatId,userName);
-                LOG.info("press /start: " + userName);
+                log.info("press /start: " + userName);
             }
             case USD -> {
                 String userName = user;

@@ -89,7 +89,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         String formattedText;
         try {
             var usd = exchangeRatesService.getUSDExchangeRate();
-            var text = "Курс доллара на %s составляет %s рублей";
+            var text = "Курс доллара на %s составляет %s грн";
             formattedText = String.format(text, LocalDate.now(), usd);
         } catch (ServiceException e) {
             LOG.error("Ошибка получения курса доллара", e);
@@ -103,7 +103,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         String formattedText;
         try {
             var usd = exchangeRatesService.getEURExchangeRate();
-            var text = "Курс евро на %s составляет %s рублей";
+            var text = "Курс евро на %s составляет %s грн";
             formattedText = String.format(text, LocalDate.now(), usd);
         } catch (ServiceException e) {
             LOG.error("Ошибка получения курса евро", e);

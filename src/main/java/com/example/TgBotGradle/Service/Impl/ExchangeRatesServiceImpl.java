@@ -37,7 +37,7 @@ public class ExchangeRatesServiceImpl implements ExchangeRatesService {
         var sourse = new InputSource(new StringReader(xml));
         try {
             var xpath = XPathFactory.newDefaultInstance().newXPath();
-            var document = (Document) xpath.evaluate("/", sourse, XPathConstants.NODE);
+            var document = (org.w3c.dom.Document) xpath.evaluate("/", sourse, XPathConstants.NODE);
             return xpath.evaluate(xpathExpression, document);
         } catch (XPathExpressionException e) {
             throw new ServerCloneException("Не удалось распарсить XML", e);

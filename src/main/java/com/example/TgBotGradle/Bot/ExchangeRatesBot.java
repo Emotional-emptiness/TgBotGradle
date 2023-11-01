@@ -8,12 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.rmi.server.ServerCloneException;
 import java.time.LocalDate;
@@ -30,11 +29,52 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
     private static final String HELP = "/help";
     @Autowired
     private ExchangeRatesService exchangeRatesService;
+
     public ExchangeRatesBot(@Value("${bot.token}") String botToken) {
         super(botToken);
     }
+
     @Override
     public void onUpdateReceived(Update update) {
+
+        if (update.hasCallbackQuery()) {
+            String data = update.getCallbackQuery().getData();
+            long chatId = update.getCallbackQuery().getMessage().getChatId();
+            String callbackQueryId = update.getCallbackQuery().getId(); // Получаем callbackQueryId
+
+            switch (data) {
+                case "/usd":
+                    usdCommand(chatId);
+                    AnswerCallbackQuery answerUsd = new AnswerCallbackQuery();
+                    answerUsd.setCallbackQueryId(callbackQueryId);
+                    try {
+                        execute(answerUsd);
+                    } catch (TelegramApiException e) {
+                        LOG.error("Ошибка отправки ответа на инлайн-кнопку", e);
+                    }
+                    break;
+                case "/eur":
+                    eurCommand(chatId);
+                    AnswerCallbackQuery answerEur = new AnswerCallbackQuery();
+                    answerEur.setCallbackQueryId(callbackQueryId);
+                    try {
+                        execute(answerEur);
+                    } catch (TelegramApiException e) {
+                        LOG.error("Ошибка отправки ответа на инлайн-кнопку", e);
+                    }
+                    break;
+                case "/help":
+                    helpCommand(chatId);
+                    AnswerCallbackQuery answerHelp = new AnswerCallbackQuery();
+                    answerHelp.setCallbackQueryId(callbackQueryId);
+                    try {
+                        execute(answerHelp);
+                    } catch (TelegramApiException e) {
+                        LOG.error("Ошибка отправки ответа на инлайн-кнопку", e);
+                    }
+                    break;
+            }
+        }
         if (!update.hasMessage() || !update.getMessage().hasText()) {
             return;
         }
@@ -45,6 +85,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
 
         switch (message) {
             case START -> {
+
                 String userName = user;
                 startCommand(chatId, userName);
                 var currencySelectionMessage = createCurrencySelectionMessage(chatId);
@@ -54,39 +95,45 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
                     LOG.error("Ошибка отправки сообщения", e);
                 }
                 LOG.info("press /start: " + userName);
-                }
-                case USD -> {
+            }
+
+            case USD -> {
+
                 String userName = user;
                 usdCommand(chatId);
+
                 LOG.info("press /usd: " + userName);
-                }
-                case EUR -> {
+            }
+
+            case EUR -> {
+
                 String userName = user;
                 eurCommand(chatId);
+
                 LOG.info("press /eur: " + userName);
-                }
-                case HELP -> {
+            }
+            case HELP -> {
                 String userName = user;
                 helpCommand(chatId);
                 LOG.info("press /help: " + userName);
-                }
-                default -> {
+            }
+            default -> {
                 String userName = user;
                 unknownCommand(chatId);
                 LOG.info("press unknown command: " + userName);
-                }
             }
+        }
 
     }
-
 
     @Override
     public String getBotUsername() {
-        return "currenciesjavabot";
+        return "currenciesjavaspringbot";
     }
+
     private void sendMessage(Long chatId, String text) {
         var chatIdStr = String.valueOf(chatId);
-        var sendMessage = new SendMessage(chatIdStr,text);
+        var sendMessage = new SendMessage(chatIdStr, text);
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
@@ -158,27 +205,33 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         var text = "Не удалось распознать команду";
         sendMessage(chatId, text);
     }
-    private SendMessage createCurrencySelectionMessage(Long chatId) {
-        var text = "Выберите команду:";
-        var sendMessage = new SendMessage(chatId.toString(), text); // Преобразуйте chatId в строку
 
-        List<List<InlineKeyboardButton> > keyboard = new ArrayList<>();
-        List<InlineKeyboardButton> row = new ArrayList<>();
+    private SendMessage createCurrencySelectionMessage(Long chatId) {
+        SendMessage sendMessage = new SendMessage(chatId.toString(), "Выберите команду:");
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
 
         InlineKeyboardButton usdButton = new InlineKeyboardButton("USD");
         usdButton.setCallbackData("/usd");
-        row.add(usdButton);
 
         InlineKeyboardButton eurButton = new InlineKeyboardButton("EUR");
         eurButton.setCallbackData("/eur");
-        row.add(eurButton);
 
         InlineKeyboardButton helpButton = new InlineKeyboardButton("HELP");
         helpButton.setCallbackData("/help");
-        row.add(helpButton);
 
-        keyboard.add(row);
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboard);
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        row1.add(usdButton);
+        row1.add(eurButton);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        row2.add(helpButton);
+
+        keyboard.add(row1);
+        keyboard.add(row2);
+
+        markup.setKeyboard(keyboard);
         sendMessage.setReplyMarkup(markup);
 
         return sendMessage;

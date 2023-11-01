@@ -14,6 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
 import java.rmi.server.ServerCloneException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
     private static final String START = "/start";
     private static final String USD = "/usd";
     private static final String EUR = "/eur";
+    private static final String AED = "/aed";
     private static final String HELP = "/help";
     @Autowired
     private ExchangeRatesService exchangeRatesService;
@@ -40,7 +42,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         if (update.hasCallbackQuery()) {
             String data = update.getCallbackQuery().getData();
             long chatId = update.getCallbackQuery().getMessage().getChatId();
-            String callbackQueryId = update.getCallbackQuery().getId(); // Получаем callbackQueryId
+            String callbackQueryId = update.getCallbackQuery().getId();
 
             switch (data) {
                 case "/usd":
@@ -59,6 +61,16 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
                     answerEur.setCallbackQueryId(callbackQueryId);
                     try {
                         execute(answerEur);
+                    } catch (TelegramApiException e) {
+                        LOG.error("Ошибка отправки ответа на инлайн-кнопку", e);
+                    }
+                    break;
+                case "/aed":
+                    aedCommand(chatId);
+                    AnswerCallbackQuery answerAed = new AnswerCallbackQuery();
+                    answerAed.setCallbackQueryId(callbackQueryId);
+                    try {
+                        execute(answerAed);
                     } catch (TelegramApiException e) {
                         LOG.error("Ошибка отправки ответа на инлайн-кнопку", e);
                     }
@@ -85,7 +97,6 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
 
         switch (message) {
             case START -> {
-
                 String userName = user;
                 startCommand(chatId, userName);
                 var currencySelectionMessage = createCurrencySelectionMessage(chatId);
@@ -96,21 +107,23 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
                 }
                 LOG.info("press /start: " + userName);
             }
-
             case USD -> {
-
                 String userName = user;
                 usdCommand(chatId);
 
                 LOG.info("press /usd: " + userName);
             }
-
             case EUR -> {
-
                 String userName = user;
                 eurCommand(chatId);
 
                 LOG.info("press /eur: " + userName);
+            }
+            case AED -> {
+                String userName = user;
+                aedCommand(chatId);
+
+                LOG.info("press /aed: " + userName);
             }
             case HELP -> {
                 String userName = user;
@@ -151,6 +164,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
                 либо напишите команду:
                 /usd - курс доллара
                 /eur - курс евро
+                /aed - курс дирхама
                                 
                 Дополнительные команда
                 либо кнопка снизу:
@@ -190,6 +204,21 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         sendMessage(chatId, formattedText);
     }
 
+    private void aedCommand(Long chatId) {
+        String formattedText;
+        try {
+            var usd = exchangeRatesService.getAEDExchangeRate();
+            var text = "Курс дирхам на %s составляет %s грн";
+            formattedText = String.format(text, LocalDate.now(), usd);
+        } catch (ServiceException e) {
+            LOG.error("Ошибка получения курса дирхама", e);
+            formattedText = "Не удалось получить текущий курс дирхама. Попробуйте позже.";
+        } catch (ServerCloneException e) {
+            throw new RuntimeException(e);
+        }
+        sendMessage(chatId, formattedText);
+    }
+
     private void helpCommand(Long chatId) {
         var text = """
                 Справочная информация по боту
@@ -218,6 +247,9 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         InlineKeyboardButton eurButton = new InlineKeyboardButton("EUR");
         eurButton.setCallbackData("/eur");
 
+        InlineKeyboardButton aedButton = new InlineKeyboardButton("AED");
+        aedButton.setCallbackData("/aed");
+
         InlineKeyboardButton helpButton = new InlineKeyboardButton("HELP");
         helpButton.setCallbackData("/help");
 
@@ -226,6 +258,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
         row1.add(eurButton);
 
         List<InlineKeyboardButton> row2 = new ArrayList<>();
+        row2.add(aedButton);
         row2.add(helpButton);
 
         keyboard.add(row1);

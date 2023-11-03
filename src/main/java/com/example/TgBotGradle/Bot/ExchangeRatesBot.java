@@ -9,8 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -34,15 +36,16 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
 
     public ExchangeRatesBot(@Value("${bot.token}") String botToken) {
         super(botToken);
+        registerCommands();
     }
 
     @Override
     public void onUpdateReceived(Update update) {
-
         if (update.hasCallbackQuery()) {
-            String data = update.getCallbackQuery().getData();
-            long chatId = update.getCallbackQuery().getMessage().getChatId();
-            String callbackQueryId = update.getCallbackQuery().getId();
+            var data = update.getCallbackQuery().getData();
+            var chatId = update.getCallbackQuery().getMessage().getChatId();
+            var callbackQueryId = update.getCallbackQuery().getId();
+            var userMessage = update.getCallbackQuery().getFrom().getUserName();
 
             switch (data) {
                 case "/usd":
@@ -54,6 +57,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
                     } catch (TelegramApiException e) {
                         LOG.error("Ошибка отправки ответа на инлайн-кнопку", e);
                     }
+                    LOG.info("press /usd: " + userMessage);
                     break;
                 case "/eur":
                     eurCommand(chatId);
@@ -64,6 +68,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
                     } catch (TelegramApiException e) {
                         LOG.error("Ошибка отправки ответа на инлайн-кнопку", e);
                     }
+                    LOG.info("press /eur: " + userMessage);
                     break;
                 case "/aed":
                     aedCommand(chatId);
@@ -74,6 +79,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
                     } catch (TelegramApiException e) {
                         LOG.error("Ошибка отправки ответа на инлайн-кнопку", e);
                     }
+                    LOG.info("press /aed: " + userMessage);
                     break;
                 case "/help":
                     helpCommand(chatId);
@@ -84,64 +90,82 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
                     } catch (TelegramApiException e) {
                         LOG.error("Ошибка отправки ответа на инлайн-кнопку", e);
                     }
+                    LOG.info("press /help: " + userMessage);
                     break;
             }
         }
-        if (!update.hasMessage() || !update.getMessage().hasText()) {
-            return;
-        }
 
-        var message = update.getMessage().getText();
-        var chatId = update.getMessage().getChatId();
-        var user = update.getMessage().getChat().getUserName();
+        if (update.hasMessage() && update.getMessage().hasText()) {
+            var message = update.getMessage().getText();
+            var chatId = update.getMessage().getChatId();
 
-        switch (message) {
-            case START -> {
-                String userName = user;
-                startCommand(chatId, userName);
-                var currencySelectionMessage = createCurrencySelectionMessage(chatId);
-                try {
-                    execute(currencySelectionMessage);
-                } catch (TelegramApiException e) {
-                    LOG.error("Ошибка отправки сообщения", e);
+            if (update.getMessage().getChat().getUserName() != null) {
+                var userMessage = update.getMessage().getChat().getUserName();
+                switch (message) {
+                    case START -> {
+                        startCommand(chatId, userMessage);
+                        var currencySelectionMessage = createCurrencySelectionMessage(chatId);
+                        try {
+                            execute(currencySelectionMessage);
+                        } catch (TelegramApiException e) {
+                            LOG.error("Ошибка отправки сообщения", e);
+                        }
+                        LOG.info("press /start: " + userMessage);
+                    }
+                    case USD -> {
+                        usdCommand(chatId);
+                        LOG.info("press /usd: " + userMessage);
+                    }
+                    case EUR -> {
+                        eurCommand(chatId);
+                        LOG.info("press /eur: " + userMessage);
+                    }
+                    case AED -> {
+                        aedCommand(chatId);
+                        LOG.info("press /aed: " + userMessage);
+                    }
+                    case HELP -> {
+                        helpCommand(chatId);
+                        LOG.info("press /help: " + userMessage);
+                    }
+                    default -> {
+                        unknownCommand(chatId);
+                        LOG.info("press unknown command: " + userMessage);
+                    }
                 }
-                LOG.info("press /start: " + userName);
-            }
-            case USD -> {
-                String userName = user;
-                usdCommand(chatId);
-
-                LOG.info("press /usd: " + userName);
-            }
-            case EUR -> {
-                String userName = user;
-                eurCommand(chatId);
-
-                LOG.info("press /eur: " + userName);
-            }
-            case AED -> {
-                String userName = user;
-                aedCommand(chatId);
-
-                LOG.info("press /aed: " + userName);
-            }
-            case HELP -> {
-                String userName = user;
-                helpCommand(chatId);
-                LOG.info("press /help: " + userName);
-            }
-            default -> {
-                String userName = user;
-                unknownCommand(chatId);
-                LOG.info("press unknown command: " + userName);
             }
         }
-
     }
+
 
     @Override
     public String getBotUsername() {
         return "currenciesjavaspringbot";
+    }
+
+    public void registerCommands() {
+        List<BotCommand> commands = new ArrayList<>();
+
+        BotCommand startCommand = new BotCommand("start", "Начать работу с ботом");
+        BotCommand usdCommand = new BotCommand("usd", "Получить курс доллара");
+        BotCommand eurCommand = new BotCommand("eur", "Получить курс евро");
+        BotCommand aedCommand = new BotCommand("aed", "Получить курс дирхама");
+        BotCommand helpCommand = new BotCommand("help", "Получить справку");
+
+        commands.add(startCommand);
+        commands.add(usdCommand);
+        commands.add(eurCommand);
+        commands.add(aedCommand);
+        commands.add(helpCommand);
+
+        SetMyCommands setMyCommands = new SetMyCommands();
+        setMyCommands.setCommands(commands);
+
+        try {
+            execute(setMyCommands);
+        } catch (TelegramApiException e) {
+            LOG.error("Ошибка регистрации команд", e);
+        }
     }
 
     private void sendMessage(Long chatId, String text) {

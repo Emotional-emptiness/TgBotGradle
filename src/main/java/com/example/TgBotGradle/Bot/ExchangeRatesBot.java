@@ -261,7 +261,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
     }
 
     private SendMessage createCurrencySelectionMessage(Long chatId) {
-        SendMessage sendMessage = new SendMessage(chatId.toString(), "Выберите команду:");
+        SendMessage sendMessage = new SendMessage(chatId.toString(), "Команды:");
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();

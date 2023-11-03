@@ -250,6 +250,7 @@ public class ExchangeRatesBot extends TelegramLongPollingBot {
                 Для получения текущих курсов валют воспользуйтесь командами:
                 /usd - курс доллара
                 /eur - курс евро
+                /aed - курс дирхам
                 """;
         sendMessage(chatId, text);
     }

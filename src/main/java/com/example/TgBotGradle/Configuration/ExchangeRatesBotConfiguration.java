@@ -16,8 +16,9 @@ public class ExchangeRatesBotConfiguration {
         api.registerBot(exchangeRatesBot);
         return api;
     }
+
     @Bean
-    public OkHttpClient okHttpClient(){
+    public OkHttpClient okHttpClient() {
         return new OkHttpClient();
     }
 }

@@ -22,22 +22,23 @@ public class ExchangeRatesServiceImpl implements ExchangeRatesService {
     public static final String AED_XPATH = "/exchange/currency[cc='AED']/rate";
     @Autowired
     private UaClient client;
+
     @Override
     public String getUSDExchangeRate() throws SecurityException, ServiceException, ServerCloneException {
         var xml = client.getCurrencyRatesXML();
-        return extractCurrencyValueFromXML(xml,USD_XPATH);
+        return extractCurrencyValueFromXML(xml, USD_XPATH);
     }
 
     @Override
     public String getEURExchangeRate() throws SecurityException, ServiceException, ServerCloneException {
         var xml = client.getCurrencyRatesXML();
-        return extractCurrencyValueFromXML(xml,EUR_XPATH);
+        return extractCurrencyValueFromXML(xml, EUR_XPATH);
     }
 
     @Override
     public String getAEDExchangeRate() throws SecurityException, ServiceException, ServerCloneException {
         var xml = client.getCurrencyRatesXML();
-        return extractCurrencyValueFromXML(xml,AED_XPATH);
+        return extractCurrencyValueFromXML(xml, AED_XPATH);
     }
 
     private static String extractCurrencyValueFromXML(String xml, String xpathExpression) throws ServerCloneException {
